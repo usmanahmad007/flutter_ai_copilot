@@ -11,13 +11,17 @@ An all-in-one AI Chatbot & Copilot Kit for Flutter. Effortlessly integrate real-
 
 ## 🌟 Key Features
 
-- ⚡ **Real-Time Token Streaming**: Low-latency Server-Sent Events (SSE) token delivery with smooth auto-scrolling and typewriter rendering.
+- ⚡ **Zero-Jank 60/120 FPS Frame-Synced Streaming**: Coalesces raw high-frequency token streams into display-synchronized UI updates, completely eliminating micro-stutters and widget rebuild thrashing.
+- 🛡️ **Human-in-the-Loop (HITL) Security**: Guard sensitive/destructive tools with interactive approval cards (`ToolApprovalCard`) featuring customizable risk levels (`low`, `medium`, `high`) and "Approve & Run" / "Deny Action" actions.
+- 📱 **Screen-Aware Context Introspection**: `AiScreenContext` and `AiContextScope` automatically inject the active Flutter route, state, and visible widgets into LLM system prompts without manual wiring.
+- 💾 **Multi-Turn Persistent Storage**: Pluggable session history engine (`AiChatStorageEngine`, `InMemoryStorageEngine`) for restoring and managing conversational sessions across app restarts.
+- 🚦 **Bi-Directional Action Bus**: `AiActionBus` bridges AI tool execution directly to Flutter app state mutation and route navigation.
 - 🛠️ **Autonomous Tool Calling**: Automatically executes Dart functions when triggered by the LLM, feeds results back, and streams the synthesized response.
 - 🎨 **Dynamic Generative UI**: Register custom Flutter widgets for any tool to render interactive cards (e.g. Weather cards, Flight passes, Booking confirmations).
 - 📜 **Interactive Markdown & Code**: Syntax-highlighted code blocks with language indicators, one-tap clipboard copy, and formatted text tables.
 - 👁️ **Multimodal Vision**: Send photos, screenshots, and documents (base64 or remote URLs) directly to Gemini 2.0/1.5 or OpenAI GPT-4o.
 - 📱 **Drop-In Copilot UI**:
-  - `AiChatView`: Embedded or full-screen customizable chat view with suggested prompts.
+  - `AiChatView`: Embedded or full-screen customizable chat view with live performance HUD (tok/s, TTFT) and active screen context chips.
   - `AiCopilotFab`: Pulsing AI glow Floating Action Button.
   - `AiCopilot.showSheet()`: Modal bottom sheet that slides up over any screen.
 - 🧪 **Zero-Config Prototyping**: Bundled `MockAiProvider` for instant offline testing and unit testing with zero API keys required.
@@ -184,6 +188,82 @@ controller.registerGenerativeUi('check_weather', (context, data) {
     ),
   );
 });
+```
+
+---
+
+## 🛡️ Human-in-the-Loop (HITL) Security
+
+Prevent AI hallucination damage by requiring user confirmation for sensitive or destructive actions:
+
+```dart
+controller.registerTool(
+  AiTool(
+    name: 'transfer_funds',
+    description: 'Transfers money between customer accounts.',
+    executionMode: AiToolExecutionMode.requiresApproval,
+    riskLevel: AiToolRiskLevel.high,
+    confirmationMessage: (args) =>
+        'Authorize transfer of \$${args['amount']} to ${args['recipient']}?',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'amount': {'type': 'number'},
+        'recipient': {'type': 'string'},
+      },
+      'required': ['amount', 'recipient'],
+    },
+    handler: (args) async {
+      return await bankApi.transfer(args['amount'], args['recipient']);
+    },
+  ),
+);
+```
+
+When triggered, the copilot immediately halts autonomous execution and displays a native `ToolApprovalCard` directly inside the message list, giving the user full parameter visibility and **Approve & Run** or **Deny Action** controls.
+
+---
+
+## 📱 Screen-Aware Context Introspection
+
+Give your AI instant awareness of what screen the user is viewing and what data is visible:
+
+```dart
+AiContextScope(
+  screenContext: const AiScreenContext(
+    routeName: '/cart',
+    title: 'Shopping Cart',
+    properties: {
+      'cartTotal': 149.99,
+      'itemsCount': 3,
+      'promoApplied': 'SAVE10',
+    },
+    visibleContent: [
+      'Wireless Headphones - \$99.00',
+      'USB-C Cable - \$19.99',
+    ],
+  ),
+  child: Scaffold(
+    body: ...,
+    floatingActionButton: AiCopilotFab(controller: controller),
+  ),
+)
+```
+
+The active screen context is automatically formatted and injected into the LLM system prompt on every message!
+
+---
+
+## ⚡ Zero-Jank 60/120 FPS Streaming & Metrics
+
+High-speed LLMs stream tokens at 80+ chunks/second, causing severe widget rebuild thrashing. `flutter_ai_copilot` includes `FrameSyncedStreamBuffer` to batch token updates to your device's refresh rate (16ms for 60Hz, 8ms for 120Hz).
+
+Inspect live generation telemetry directly:
+
+```dart
+final metrics = controller.lastStreamMetrics;
+print('Speed: ${metrics?.tokensPerSecond.toStringAsFixed(1)} tok/s');
+print('TTFT: ${metrics?.timeToFirstToken?.inMilliseconds} ms');
 ```
 
 ---

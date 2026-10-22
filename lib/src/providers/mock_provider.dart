@@ -79,13 +79,13 @@ class MockAiProvider implements AiProvider {
         query.contains('weather') &&
         tools != null &&
         tools.any((t) => t.name == 'check_weather')) {
-      return const AiResponse(
+      return AiResponse(
         content: '',
         toolCalls: [
           AiToolCall(
             id: 'mock_tool_call_weather',
             name: 'check_weather',
-            arguments: {'city': 'San Francisco', 'units': 'celsius'},
+            arguments: const {'city': 'San Francisco', 'units': 'celsius'},
           ),
         ],
       );
@@ -96,13 +96,30 @@ class MockAiProvider implements AiProvider {
         query.contains('flight') &&
         tools != null &&
         tools.any((t) => t.name == 'search_flights')) {
-      return const AiResponse(
+      return AiResponse(
         content: '',
         toolCalls: [
           AiToolCall(
             id: 'mock_tool_call_flight',
             name: 'search_flights',
-            arguments: {'destination': 'Tokyo', 'date': '2026-11-01'},
+            arguments: const {'destination': 'Tokyo', 'date': '2026-11-01'},
+          ),
+        ],
+      );
+    }
+
+    // Check if secure transfer tool should be called
+    if (!hasToolAlreadyRun &&
+        query.contains('transfer') &&
+        tools != null &&
+        tools.any((t) => t.name == 'execute_secure_transfer')) {
+      return AiResponse(
+        content: '',
+        toolCalls: [
+          AiToolCall(
+            id: 'mock_tool_call_transfer',
+            name: 'execute_secure_transfer',
+            arguments: const {'amount': 250, 'recipient': 'Alex Morgan'},
           ),
         ],
       );

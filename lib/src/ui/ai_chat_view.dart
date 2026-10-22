@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../context/screen_context.dart';
 import '../controller/ai_chat_controller.dart';
 import '../models/ai_message.dart';
 import '../theme/ai_chat_theme.dart';
@@ -16,6 +17,8 @@ class AiChatView extends StatefulWidget {
   final Widget? userAvatar;
   final Widget? assistantAvatar;
   final VoidCallback? onVoicePressed;
+  final bool showStreamMetrics;
+  final bool showScreenContextBanner;
 
   const AiChatView({
     super.key,
@@ -28,6 +31,8 @@ class AiChatView extends StatefulWidget {
     this.userAvatar,
     this.assistantAvatar,
     this.onVoicePressed,
+    this.showStreamMetrics = true,
+    this.showScreenContextBanner = false,
   });
 
   @override
@@ -44,6 +49,17 @@ class _AiChatViewState extends State<AiChatView> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onControllerUpdate);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.controller.screenContext == null) {
+      final ambient = AiScreenContext.of(context);
+      if (ambient != null) {
+        widget.controller.setScreenContext(ambient);
+      }
+    }
   }
 
   @override
@@ -101,12 +117,22 @@ class _AiChatViewState extends State<AiChatView> {
           // Optional Header
           if (widget.header != null) widget.header!,
 
+          // Active Screen Context Banner (if enabled)
+          if (widget.showScreenContextBanner &&
+              widget.controller.screenContext != null)
+            _buildScreenContextBanner(effectiveTheme),
+
           // Message List or Empty State
           Expanded(
             child: widget.controller.messages.isEmpty
                 ? _buildEmptyState(effectiveTheme)
                 : _buildMessageList(effectiveTheme),
           ),
+
+          // Live Stream Metrics Pill (if enabled & available)
+          if (widget.showStreamMetrics &&
+              widget.controller.lastStreamMetrics != null)
+            _buildStreamMetricsBadge(effectiveTheme),
 
           // Suggested Prompts (if any)
           if (widget.suggestedPrompts != null &&
@@ -224,9 +250,84 @@ class _AiChatViewState extends State<AiChatView> {
           userAvatar: widget.userAvatar,
           assistantAvatar: widget.assistantAvatar,
           generativeUiRegistry: widget.controller.generativeUiRegistry,
+          tools: widget.controller.tools,
+          onApproveTool: (id) => widget.controller.approveToolCall(id),
+          onRejectTool: (id, reason) =>
+              widget.controller.rejectToolCall(id, reason: reason),
           onRetry: () => widget.controller.retryLast(),
         );
       },
+    );
+  }
+
+  Widget _buildScreenContextBanner(AiChatTheme theme) {
+    final screenCtx = widget.controller.screenContext;
+    if (screenCtx == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+      decoration: BoxDecoration(
+        color: theme.primaryColor.withAlpha(25),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.primaryColor.withAlpha(80)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.layers_rounded, size: 14, color: theme.primaryColor),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Active Context: ${screenCtx.routeName}${screenCtx.title != null ? ' (${screenCtx.title})' : ''}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.primaryColor,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStreamMetricsBadge(AiChatTheme theme) {
+    final metrics = widget.controller.lastStreamMetrics;
+    if (metrics == null) return const SizedBox.shrink();
+
+    final isLive = widget.controller.isGenerating;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isLive ? theme.primaryColor : theme.toolBannerColor,
+          width: isLive ? 1.2 : 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.speed_rounded,
+            size: 14,
+            color: isLive ? Colors.amberAccent : Colors.greenAccent,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '${metrics.tokensPerSecond.toStringAsFixed(1)} tok/s • TTFT: ${metrics.timeToFirstToken?.inMilliseconds ?? 0}ms • ${metrics.totalTokens} tokens',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w500,
+              color: theme.assistantTextColor.withAlpha(200),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../models/ai_message.dart';
+import '../../models/ai_tool.dart';
 import '../../theme/ai_chat_theme.dart';
 import 'code_block_widget.dart';
 import 'tool_call_timeline_widget.dart';
@@ -15,6 +16,9 @@ class AiMessageBubble extends StatelessWidget {
   final Widget? assistantAvatar;
   final Map<String, Widget Function(BuildContext, dynamic)>?
       generativeUiRegistry;
+  final Map<String, AiTool>? tools;
+  final void Function(String toolCallId)? onApproveTool;
+  final void Function(String toolCallId, String? reason)? onRejectTool;
   final VoidCallback? onRetry;
 
   const AiMessageBubble({
@@ -24,6 +28,9 @@ class AiMessageBubble extends StatelessWidget {
     this.userAvatar,
     this.assistantAvatar,
     this.generativeUiRegistry,
+    this.tools,
+    this.onApproveTool,
+    this.onRejectTool,
     this.onRetry,
   });
 
@@ -61,6 +68,9 @@ class AiMessageBubble extends StatelessWidget {
                     toolResults: message.toolResults,
                     theme: theme,
                     generativeUiRegistry: generativeUiRegistry,
+                    tools: tools,
+                    onApproveTool: onApproveTool,
+                    onRejectTool: onRejectTool,
                   ),
 
                 // Main message bubble

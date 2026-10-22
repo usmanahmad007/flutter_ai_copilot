@@ -1,16 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../models/ai_message.dart';
+import '../../models/ai_tool.dart';
+import '../../security/tool_approval_card.dart';
 import '../../theme/ai_chat_theme.dart';
 
 /// Collapsible timeline accordion displaying autonomous tool execution steps,
-/// inputs, outputs, and embedded Generative UI widgets.
+/// inputs, outputs, embedded Generative UI widgets, and Human-in-the-Loop approvals.
 class ToolCallTimelineWidget extends StatefulWidget {
   final List<AiToolCall> toolCalls;
   final List<AiToolResult> toolResults;
   final AiChatTheme theme;
   final Map<String, Widget Function(BuildContext context, dynamic data)>?
       generativeUiRegistry;
+  final Map<String, AiTool>? tools;
+  final void Function(String toolCallId)? onApproveTool;
+  final void Function(String toolCallId, String? reason)? onRejectTool;
 
   const ToolCallTimelineWidget({
     super.key,
@@ -18,6 +23,9 @@ class ToolCallTimelineWidget extends StatefulWidget {
     required this.toolResults,
     required this.theme,
     this.generativeUiRegistry,
+    this.tools,
+    this.onApproveTool,
+    this.onRejectTool,
   });
 
   @override
@@ -45,6 +53,18 @@ class _ToolCallTimelineWidgetState extends State<ToolCallTimelineWidget> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: widget.toolCalls.map((call) {
+        // If the tool requires Human-in-the-Loop approval or was rejected, display the approval card
+        if (call.status == AiToolCallStatus.pendingApproval ||
+            call.status == AiToolCallStatus.rejected) {
+          return ToolApprovalCard(
+            toolCall: call,
+            tool: widget.tools?[call.name],
+            theme: widget.theme,
+            onApprove: () => widget.onApproveTool?.call(call.id),
+            onDeny: (reason) => widget.onRejectTool?.call(call.id, reason),
+          );
+        }
+
         final matchingResult =
             widget.toolResults.cast<AiToolResult?>().firstWhere(
                   (r) => r?.toolCallId == call.id || r?.name == call.name,

@@ -40,22 +40,41 @@ class AiAttachment {
       );
 }
 
+/// Lifecycle status of a tool call request.
+enum AiToolCallStatus {
+  pendingApproval,
+  approved,
+  rejected,
+  executing,
+  completed,
+  failed,
+}
+
 /// Represents an LLM tool / function call invocation request.
 class AiToolCall {
   final String id;
   final String name;
   final Map<String, dynamic> arguments;
+  AiToolCallStatus status;
+  String? rejectionReason;
+  String? riskLevel;
 
-  const AiToolCall({
+  AiToolCall({
     required this.id,
     required this.name,
     required this.arguments,
+    this.status = AiToolCallStatus.completed,
+    this.rejectionReason,
+    this.riskLevel,
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'arguments': arguments,
+        'status': status.name,
+        if (rejectionReason != null) 'rejectionReason': rejectionReason,
+        if (riskLevel != null) 'riskLevel': riskLevel,
       };
 
   factory AiToolCall.fromJson(Map<String, dynamic> json) => AiToolCall(
@@ -65,6 +84,14 @@ class AiToolCall {
         arguments: json['arguments'] is String
             ? jsonDecode(json['arguments'] as String) as Map<String, dynamic>
             : (json['arguments'] as Map<String, dynamic>? ?? {}),
+        status: json['status'] != null
+            ? AiToolCallStatus.values.firstWhere(
+                (s) => s.name == json['status'],
+                orElse: () => AiToolCallStatus.completed,
+              )
+            : AiToolCallStatus.completed,
+        rejectionReason: json['rejectionReason'] as String?,
+        riskLevel: json['riskLevel'] as String?,
       );
 }
 

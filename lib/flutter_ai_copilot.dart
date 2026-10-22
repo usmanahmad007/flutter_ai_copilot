@@ -13,6 +13,22 @@ export 'src/models/ai_message.dart';
 export 'src/models/ai_tool.dart';
 export 'src/models/ai_provider_config.dart';
 
+// Context & Screen-Aware Introspection
+export 'src/context/screen_context.dart';
+
+// Streaming Engine & Performance Metrics
+export 'src/streaming/frame_synced_buffer.dart';
+export 'src/streaming/stream_metrics.dart';
+
+// Security & Human-in-the-Loop Approval
+export 'src/security/tool_approval_card.dart';
+
+// Persistent Storage & Session History
+export 'src/storage/chat_storage.dart';
+
+// Action Bus & Navigation Bridge
+export 'src/actions/ai_action_bus.dart';
+
 // Providers
 export 'src/providers/base_provider.dart';
 export 'src/providers/gemini_provider.dart';

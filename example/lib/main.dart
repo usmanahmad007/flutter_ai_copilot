@@ -137,8 +137,85 @@ class _DemoHomeScreenState extends State<DemoHomeScreen> {
             };
           },
         ),
+
+        // 3. Sensitive Financial Transfer Tool (Human-in-the-Loop Approval)
+        AiTool(
+          name: 'execute_secure_transfer',
+          description:
+              'Executes an authorized funds transfer to a designated contact.',
+          executionMode: AiToolExecutionMode.requiresApproval,
+          riskLevel: AiToolRiskLevel.high,
+          confirmationMessage: (args) =>
+              'Authorize transfer of \$${args['amount'] ?? 250} to recipient "${args['recipient'] ?? 'Alex Morgan'}"?',
+          parameters: {
+            'type': 'object',
+            'properties': {
+              'amount': {
+                'type': 'number',
+                'description': 'Transfer amount in USD',
+              },
+              'recipient': {
+                'type': 'string',
+                'description': 'Recipient name or account ID',
+              },
+            },
+            'required': ['amount', 'recipient'],
+          },
+          handler: (args) async {
+            await Future.delayed(const Duration(milliseconds: 900));
+            return {
+              'status': 'SUCCESSFUL',
+              'transactionId': 'TX-94810284',
+              'amount': args['amount'] ?? 250,
+              'recipient': args['recipient'] ?? 'Alex Morgan',
+              'timestamp': DateTime.now().toIso8601String(),
+              'fee': '\$0.00 (Fee waived)',
+            };
+          },
+        ),
       ],
     );
+
+    // Register Generative UI for execute_secure_transfer
+    _controller.registerGenerativeUi('execute_secure_transfer',
+        (context, data) {
+      final map = data is Map ? data : <String, dynamic>{};
+      final txId = map['transactionId'] ?? 'TX-94810284';
+      final amount = map['amount']?.toString() ?? '250';
+      final recipient = map['recipient'] ?? 'Alex Morgan';
+
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF064E3B).withAlpha(140),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.greenAccent.withAlpha(160)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.verified_rounded,
+                    color: Colors.greenAccent, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Transfer Confirmed: \$$amount',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.white),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text('Recipient: $recipient • Tx ID: $txId',
+                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+        ),
+      );
+    });
 
     // Register Generative UI for check_weather
     _controller.registerGenerativeUi('check_weather', (context, data) {
@@ -434,6 +511,7 @@ class _DemoHomeScreenState extends State<DemoHomeScreen> {
           ? AiCopilotFab(
               controller: _controller,
               suggestedPrompts: const [
+                'Transfer \$250 to Alex Morgan',
                 'Check weather in Tokyo',
                 'Search flights to London',
                 'Summarize this dashboard',
@@ -444,105 +522,144 @@ class _DemoHomeScreenState extends State<DemoHomeScreen> {
   }
 
   Widget _buildFullChatTab() {
-    return AiChatView(
-      controller: _controller,
-      title: 'Flutter AI Copilot',
-      suggestedPrompts: const [
-        'Check weather in San Francisco',
-        'Search flights to Tokyo',
-        'Write a Flutter counter in Dart',
-        'What tools can you run?',
-      ],
+    return AiContextScope(
+      screenContext: const AiScreenContext(
+        routeName: '/chat',
+        title: 'Full Copilot Assistant',
+        properties: {'user': 'Developer', 'tier': 'Enterprise'},
+        visibleContent: [
+          'Active LLM Engine: Multi-Provider',
+          'Security: HITL Active'
+        ],
+        screenSpecificTools: [
+          'execute_secure_transfer',
+          'check_weather',
+          'search_flights',
+        ],
+      ),
+      child: AiChatView(
+        controller: _controller,
+        title: 'Flutter AI Copilot',
+        showStreamMetrics: true,
+        showScreenContextBanner: true,
+        suggestedPrompts: const [
+          'Transfer \$250 to Alex Morgan',
+          'Check weather in San Francisco',
+          'Search flights to Tokyo',
+          'Write a Flutter counter in Dart',
+        ],
+      ),
     );
   }
 
   Widget _buildDashboardAppTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Your Daily App Dashboard',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+    return AiContextScope(
+      screenContext: const AiScreenContext(
+        routeName: '/dashboard',
+        title: 'Enterprise Financial Dashboard',
+        properties: {
+          'user': 'Usman Dev',
+          'totalBalance': '\$12,450.00',
+          'spendingLimit': '\$5,000.00',
+        },
+        visibleContent: [
+          'Account Status: Active',
+          'Total Balance: \$12,450.00',
+          'Security Mode: Enterprise Protected',
+        ],
+        screenSpecificTools: [
+          'execute_secure_transfer',
+          'check_weather',
+          'search_flights',
+        ],
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Tap the pulsing AI Copilot button in the bottom right corner to summon your assistant from anywhere in your app!',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Daily App Dashboard',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap the pulsing AI Copilot button in the bottom right corner to summon your assistant from anywhere in your app!',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Quick Metrics',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildMetricCard(
+                  'Active Users',
+                  '24,590',
+                  '+14%',
+                  Icons.people,
+                  Colors.blue,
+                ),
+                const SizedBox(width: 14),
+                _buildMetricCard(
+                  'Total Revenue',
+                  '\$82,400',
+                  '+22%',
+                  Icons.attach_money,
+                  Colors.green,
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Quick Metrics',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildMetricCard(
-                'Active Users',
-                '24,590',
-                '+14%',
-                Icons.people,
-                Colors.blue,
-              ),
-              const SizedBox(width: 14),
-              _buildMetricCard(
-                'Total Revenue',
-                '\$82,400',
-                '+22%',
-                Icons.attach_money,
-                Colors.green,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Copilot Capabilities Enabled',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _buildCapabilityTile(
-            Icons.offline_bolt,
-            'Zero-Config Offline Prototyping',
-            'Built-in Mock LLM runs token streaming and tools with zero setup.',
-          ),
-          _buildCapabilityTile(
-            Icons.build_circle,
-            'Autonomous Tool Execution',
-            'Weather and Flights tools query backend APIs automatically.',
-          ),
-          _buildCapabilityTile(
-            Icons.widgets,
-            'Dynamic Generative UI Cards',
-            'Renders custom rich interactive Flutter widgets on tool completion.',
-          ),
-          _buildCapabilityTile(
-            Icons.hub,
-            'Multi-LLM Switcher',
-            'Seamlessly switch between Google Gemini, OpenAI, Claude & Ollama.',
-          ),
-        ],
+            const SizedBox(height: 24),
+            const Text(
+              'Enterprise Copilot Pillars Enabled',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            _buildCapabilityTile(
+              Icons.shield_rounded,
+              'Human-in-the-Loop Security (HITL)',
+              'Sensitive tools request interactive authorization before running.',
+            ),
+            _buildCapabilityTile(
+              Icons.speed_rounded,
+              'Zero-Jank 60/120 FPS Streaming',
+              'Frame-synced batching buffer eliminates UI freezes on fast tokens.',
+            ),
+            _buildCapabilityTile(
+              Icons.layers_rounded,
+              'Screen-Aware Context Introspection',
+              'Automatically passes active route, state, and visible metadata.',
+            ),
+            _buildCapabilityTile(
+              Icons.widgets,
+              'Autonomous Tools & Generative UI Cards',
+              'Renders custom rich interactive Flutter widgets on tool completion.',
+            ),
+          ],
+        ),
       ),
     );
   }
