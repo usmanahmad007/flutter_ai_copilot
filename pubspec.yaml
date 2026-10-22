@@ -1,0 +1,30 @@
+name: flutter_ai_copilot
+description: All-in-one Flutter AI Chatbot and Copilot Kit with streaming tokens, markdown/code rendering, multimodal vision, tool calling, and multi-LLM support.
+version: 0.1.0
+homepage: https://github.com/usmanahmad007/flutter_ai_copilot
+repository: https://github.com/usmanahmad007/flutter_ai_copilot
+issue_tracker: https://github.com/usmanahmad007/flutter_ai_copilot/issues
+topics:
+  - ai
+  - chatbot
+  - copilot
+  - gemini
+  - llm
+
+environment:
+  sdk: ^3.5.4
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  flutter_markdown_plus: ^1.0.0+1
+  markdown: ^7.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
