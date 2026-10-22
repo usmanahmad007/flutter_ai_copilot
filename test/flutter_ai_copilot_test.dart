@@ -197,5 +197,53 @@ void main() {
       await tester.tap(find.byType(InkWell));
       expect(tapped, true);
     });
+
+    testWidgets('AiMessageBubble renders markdown with code block',
+        (tester) async {
+      final message =
+          AiMessage.assistant('Hello world\n\n```dart\nint x = 1;\n```\n');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AiMessageBubble(
+              message: message,
+              theme: AiChatTheme.dark(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Hello world'), findsWidgets);
+      expect(find.byType(CodeBlockWidget), findsOneWidget);
+      expect(find.textContaining('int x = 1;'), findsWidgets);
+      expect(find.text('DART'), findsOneWidget);
+    });
+
+    testWidgets(
+        'AiMessageBubble renders complex markdown and streaming updates',
+        (tester) async {
+      final message = AiMessage.assistant(
+        'Here is an explanation:\n'
+        '- Item 1\n'
+        '- Item 2\n\n'
+        '```\ngeneric code\n```\n\n'
+        'Check `inline code` and [Google](https://google.com).',
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: AiMessageBubble(
+                message: message,
+                theme: AiChatTheme.dark(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Here is an explanation:'), findsWidgets);
+      expect(find.textContaining('generic code'), findsWidgets);
+    });
   });
 }

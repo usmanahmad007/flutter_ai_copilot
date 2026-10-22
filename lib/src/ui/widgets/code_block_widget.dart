@@ -171,6 +171,11 @@ class CodeBlockElementBuilder extends MarkdownElementBuilder {
   bool isBlockElement() => true;
 
   @override
+  Widget? visitText(md.Text text, TextStyle? preferredStyle) {
+    return const SizedBox.shrink();
+  }
+
+  @override
   Widget? visitElementAfterWithContext(
     BuildContext context,
     md.Element element,
